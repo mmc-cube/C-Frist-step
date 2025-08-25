@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多图片合并转PDF (自动排序版)</title>
+    <!-- 引入Tailwind CSS框架 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入jsPDF库，用于在浏览器端生成PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* 自定义样式，用于拖拽时的视觉效果 */
+        .preview-item {
+            position: relative;
+            cursor: move;
+            transition: transform 0.2s ease-in-out;
+        }
+        .preview-item .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(239, 68, 68, 0.9); /* red-500 with opacity */
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 1;
+            transition: opacity 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+        }
+        .drag-over {
+            border-color: #3b82f6; /* blue-500 */
+            transform: scale(1.02);
+        }
+        /* 加载动画样式 */
+        .loader {
+            border: 5px solid #f3f3f3; /* Light grey */
+            border-top: 5px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6 md:p-8">
+        <!-- 标题区域 -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">多图片合并转PDF</h1>
+            <p class="text-gray-500 mt-2">免费、快速、安全 - 所有转换均在您的浏览器本地完成</p>
+        </div>
+
+        <!-- 文件上传区域 -->
+        <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer transition-all duration-300 hover:border-blue-500 hover:bg-blue-50">
+            <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+            <div class="flex flex-col items-center">
+                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p class="mt-4 text-lg text-gray-600">将图片拖拽到此处，或<span class="font-semibold text-blue-600">点击选择文件</span></p>
+                <p class="text-sm text-gray-500 mt-1">支持 JPG, PNG, WEBP, GIF 等格式</p>
+            </div>
+        </div>
+
+        <!-- 图片预览区域 -->
+        <div id="preview-container" class="mt-6 min-h-[120px]">
+            <div id="preview-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                <!-- 图片缩略图将在这里动态生成 -->
+            </div>
+             <p id="placeholder-text" class="text-center text-gray-500 py-10">请先添加图片文件...</p>
+        </div>
+
+        <!-- 操作与下载区域 -->
+        <div id="action-area" class="mt-6 hidden">
+             <p class="text-sm text-gray-600 mb-4 text-center">提示：图片已按文件名自动排序，您仍可拖动调整</p>
+             <!-- 修改点：使用flex布局来并排按钮 -->
+             <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+                <button id="convert-btn" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-12 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    <span id="btn-text">合并生成PDF</span>
+                    <div id="loader" class="loader w-6 h-6 border-t-white border-4 hidden mx-auto"></div>
+                </button>
+                <!-- 新增点：一键清空按钮 -->
+                <button id="clear-btn" class="w-full md:w-auto bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-red-600 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                    一键清空
+                </button>
+             </div>
+        </div>
+    </div>
+    
+    <!-- 消息提示框 (替代 alert) -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-lg p-6 shadow-xl text-center max-w-sm w-full">
+            <p id="modal-text" class="text-lg text-gray-700"></p>
+            <button id="modal-close" class="mt-4 bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">好的</button>
+        </div>
+    </div>
+
+
+    <script>
+        // 确保在使用 jsPDF 之前，它已经被正确加载
+        const { jsPDF } = window.jspdf;
+
+        // 获取DOM元素
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const previewGrid = document.getElementById('preview-grid');
+        const placeholderText = document.getElementById('placeholder-text');
+        const actionArea = document.getElementById('action-area');
+        const convertBtn = document.getElementById('convert-btn');
+        const btnText = document.getElementById('btn-text');
+        const loader = document.getElementById('loader');
+        const modal = document.getElementById('modal');
+        const modalText = document.getElementById('modal-text');
+        const modalClose = document.getElementById('modal-close');
+        const clearBtn = document.getElementById('clear-btn'); // 新增点：获取清空按钮
+
+        let imageFiles = []; // 用于存储所有图片文件对象的数组
+        let dragSrcElement = null; // 用于拖拽排序
+
+        // --- 事件监听 ---
+
+        // 点击拖拽区域时，触发文件输入框的点击事件
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // 文件输入框内容改变时的处理
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // 拖拽事件处理
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        // 转换按钮点击事件
+        convertBtn.addEventListener('click', createPdf);
+        
+        // 消息提示框关闭事件
+        modalClose.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        // 新增点：清空按钮点击事件
+        clearBtn.addEventListener('click', clearAllImages);
+
+
+        // --- 核心功能函数 ---
+        
+        /**
+         * 显示消息提示框
+         * @param {string} message - 要显示的消息
+         */
+        function showModal(message) {
+            modalText.textContent = message;
+            modal.classList.remove('hidden');
+        }
+        
+        /**
+         * 新增点：清空所有已选择的图片
+         */
+        function clearAllImages() {
+            imageFiles = []; // 清空存储文件的数组
+            renderPreview(); // 重新渲染，UI将恢复到初始状态
+        }
+
+        /**
+         * 处理用户选择的文件
+         * @param {FileList} files - 用户选择的文件列表
+         */
+        function handleFiles(files) {
+            const newFiles = [...files].filter(file => file.type.startsWith('image/'));
+            if (newFiles.length === 0) {
+                showModal('请选择图片文件！');
+                return;
+            }
+            imageFiles.push(...newFiles);
+
+            imageFiles.sort((a, b) => {
+                return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            });
+
+            renderPreview();
+        }
+
+        /**
+         * 渲染图片预览
+         */
+        function renderPreview() {
+            previewGrid.innerHTML = ''; 
+
+            if (imageFiles.length > 0) {
+                placeholderText.classList.add('hidden');
+                actionArea.classList.remove('hidden');
+            } else {
+                placeholderText.classList.remove('hidden');
+                actionArea.classList.add('hidden');
+            }
+
+            imageFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item w-full h-28 bg-gray-100 rounded-md overflow-hidden border-2 border-transparent transition-all duration-200';
+                    previewItem.setAttribute('draggable', true);
+                    previewItem.dataset.index = index;
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-full h-full object-cover';
+                    
+                    const removeBtn = document.createElement('div');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        removeImage(index);
+                    });
+
+                    previewItem.appendChild(img);
+                    previewItem.appendChild(removeBtn);
+                    previewGrid.appendChild(previewItem);
+                    
+                    addDragEvents(previewItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        /**
+         * 移除指定索引的图片
+         * @param {number} index - 要移除的图片在imageFiles数组中的索引
+         */
+        function removeImage(index) {
+            imageFiles.splice(index, 1);
+            renderPreview();
+        }
+
+        /**
+         * 为预览项添加拖拽排序的事件监听
+         * @param {HTMLElement} item - 预览项的DOM元素
+         */
+        function addDragEvents(item) {
+            item.addEventListener('dragstart', (e) => {
+                dragSrcElement = item;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', item.innerHTML);
+                item.classList.add('dragging');
+            });
+
+            item.addEventListener('dragenter', (e) => {
+                item.classList.add('drag-over');
+            });
+
+            item.addEventListener('dragleave', (e) => {
+                item.classList.remove('drag-over');
+            });
+
+            item.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+
+            item.addEventListener('drop', (e) => {
+                e.stopPropagation();
+                if (dragSrcElement !== item) {
+                    const srcIndex = parseInt(dragSrcElement.dataset.index);
+                    const targetIndex = parseInt(item.dataset.index);
+                    
+                    const [removed] = imageFiles.splice(srcIndex, 1);
+                    imageFiles.splice(targetIndex, 0, removed);
+                    
+                    renderPreview();
+                }
+                item.classList.remove('drag-over');
+                return false;
+            });
+            
+            item.addEventListener('dragend', (e) => {
+                item.classList.remove('dragging');
+                 Array.from(previewGrid.children).forEach(child => child.classList.remove('drag-over'));
+            });
+        }
+
+        /**
+         * 创建并下载PDF
+         */
+        async function createPdf() {
+            if (imageFiles.length === 0) {
+                showModal('请先添加图片！');
+                return;
+            }
+
+            convertBtn.disabled = true;
+            btnText.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const doc = new jsPDF({
+                    orientation: 'p',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const a4Width = 210;
+                const a4Height = 297;
+                const margin = 10;
+                const maxWidth = a4Width - margin * 2;
+                const maxHeight = a4Height - margin * 2;
+
+                for (let i = 0; i < imageFiles.length; i++) {
+                    const file = imageFiles[i];
+                    const imgData = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(file);
+                    });
+
+                    const img = await new Promise((resolve) => {
+                       const image = new Image();
+                       image.onload = () => resolve(image);
+                       image.src = imgData;
+                    });
+                    
+                    const imgWidth = img.width;
+                    const imgHeight = img.height;
+
+                    let pdfImgWidth = imgWidth;
+                    let pdfImgHeight = imgHeight;
+                    const ratio = imgWidth / imgHeight;
+
+                    if (pdfImgWidth > maxWidth) {
+                        pdfImgWidth = maxWidth;
+                        pdfImgHeight = pdfImgWidth / ratio;
+                    }
+                    if (pdfImgHeight > maxHeight) {
+                        pdfImgHeight = maxHeight;
+                        pdfImgWidth = pdfImgHeight * ratio;
+                    }
+
+                    const x = (a4Width - pdfImgWidth) / 2;
+                    const y = (a4Height - pdfImgHeight) / 2;
+
+                    if (i > 0) {
+                        doc.addPage();
+                    }
+
+                    doc.addImage(imgData, 'JPEG', x, y, pdfImgWidth, pdfImgHeight);
+                }
+
+                doc.save('合并的图片.pdf');
+
+            } catch (error) {
+                console.error('PDF生成失败:', error);
+                showModal('生成PDF时发生错误，请检查控制台获取更多信息。');
+            } finally {
+                convertBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                loader.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
