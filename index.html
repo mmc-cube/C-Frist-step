@@ -18,18 +18,18 @@
             --alarm-color: #ff4d4d;
             --font-family: 'Poppins', sans-serif;
         }
+        /* 修改后的 html 和 body 样式 */
+        html {
+            height: 100%;
+        }
         body {
             font-family: var(--font-family);
             color: var(--text-color);
             margin: 0;
-            padding: 1rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            height: 100%;
             box-sizing: border-box;
         }
-        /* 新增：使用伪元素创建固定的背景 */
+        /* 使用伪元素创建固定的背景 */
         body::before {
             content: '';
             position: fixed;
@@ -39,7 +39,17 @@
             height: 100vh;
             background: var(--bg-url) no-repeat center center;
             background-size: cover;
-            z-index: -1; /* 将背景置于最底层 */
+            z-index: -1;
+        }
+        /* 新增：用于稳定布局的包装器 */
+        .wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 100%;
+            padding: 1rem;
+            box-sizing: border-box;
         }
         .container {
             width: 100%;
@@ -48,16 +58,16 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 24px;
-            padding: clamp(1rem, 5vw, 1.5rem); /* 自适应内边距 */
+            padding: clamp(1rem, 5vw, 1.5rem);
             border: 1px solid var(--border-color);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: clamp(0.8rem, 3vw, 1rem); /* 自适应卡片间距 */
+            gap: clamp(0.8rem, 3vw, 1rem);
         }
         .section-title {
-            font-size: clamp(1rem, 4vw, 1.1rem); /* 自适应字体 */
+            font-size: clamp(1rem, 4vw, 1.1rem);
             font-weight: 600;
             margin-bottom: 0.8rem;
             padding-bottom: 0.5rem;
@@ -66,23 +76,21 @@
         .card {
             background: var(--card-bg-color);
             border-radius: 16px;
-            padding: clamp(0.8rem, 4vw, 1rem); /* 自适应卡片内边距 */
+            padding: clamp(0.8rem, 4vw, 1rem);
             border: 1px solid var(--border-color);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
         
-        /* 实时监测部分 */
         .monitoring-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0.8rem;
         }
         .data-item { text-align: center; }
-        .data-item .value { font-size: clamp(1.4rem, 5.5vw, 1.6rem); font-weight: 600; } /* 自适应字体 */
-        .data-item .label { font-size: clamp(0.7rem, 2.5vw, 0.75rem); color: var(--text-secondary-color); } /* 自适应字体 */
+        .data-item .value { font-size: clamp(1.4rem, 5.5vw, 1.6rem); font-weight: 600; }
+        .data-item .label { font-size: clamp(0.7rem, 2.5vw, 0.75rem); color: var(--text-secondary-color); }
 
-        /* 设备控制部分 */
         .control-group {
             display: flex;
             flex-direction: column;
@@ -93,7 +101,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        .control-item label { font-size: clamp(0.85rem, 3.5vw, 0.9rem); } /* 自适应字体 */
+        .control-item label { font-size: clamp(0.85rem, 3.5vw, 0.9rem); }
         
         .threshold-input {
             width: 70px;
@@ -121,7 +129,7 @@
         .toggle-switch {
             position: relative; display: inline-block;
             width: 44px; height: 24px;
-            flex-shrink: 0; /* 防止开关被压缩 */
+            flex-shrink: 0;
         }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider {
@@ -142,7 +150,6 @@
         input:checked + .slider { background-color: var(--success-color); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* 状态信息部分 */
         .status-item {
             display: flex;
             justify-content: space-between;
@@ -150,7 +157,7 @@
             padding: 0.3rem 0;
         }
         .status-value {
-            font-size: clamp(0.9rem, 4vw, 1rem); /* 自适应字体 */
+            font-size: clamp(0.9rem, 4vw, 1rem);
             font-weight: 600;
             padding: 0.3rem 0.8rem;
             border-radius: 8px;
@@ -172,77 +179,79 @@
 </head>
 <body>
 
-    <div class="container">
-        <!-- 1. 实时监测 -->
-        <section class="card">
-            <h2 class="section-title">实时监测</h2>
-            <div class="monitoring-grid">
-                <div class="data-item">
-                    <div class="value" id="temp-val">--°C</div>
-                    <div class="label">温度</div>
+    <div class="wrapper">
+        <div class="container">
+            <!-- 1. 实时监测 -->
+            <section class="card">
+                <h2 class="section-title">实时监测</h2>
+                <div class="monitoring-grid">
+                    <div class="data-item">
+                        <div class="value" id="temp-val">--°C</div>
+                        <div class="label">温度</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="value" id="pressure-val">--kPa</div>
+                        <div class="label">压力</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="value" id="sieve-turb-val">--</div>
+                        <div class="label">筛管浑浊度</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="value" id="valve-turb-val">--</div>
+                        <div class="label">固定阀浑浊度</div>
+                    </div>
                 </div>
-                <div class="data-item">
-                    <div class="value" id="pressure-val">--kPa</div>
-                    <div class="label">压力</div>
-                </div>
-                <div class="data-item">
-                    <div class="value" id="sieve-turb-val">--</div>
-                    <div class="label">筛管浑浊度</div>
-                </div>
-                <div class="data-item">
-                    <div class="value" id="valve-turb-val">--</div>
-                    <div class="label">固定阀浑浊度</div>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- 2. 设备控制 -->
-        <section class="card">
-            <h2 class="section-title">设备控制</h2>
-            <div class="control-group">
-                <div class="control-item">
-                    <label>浑浊度上限</label>
-                    <input type="number" class="threshold-input" id="upper-threshold" value="150">
+            <!-- 2. 设备控制 -->
+            <section class="card">
+                <h2 class="section-title">设备控制</h2>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label>浑浊度上限</label>
+                        <input type="number" class="threshold-input" id="upper-threshold" value="150">
+                    </div>
+                    <div class="control-item">
+                        <label>浑浊度下限</label>
+                        <input type="number" class="threshold-input" id="lower-threshold" value="50">
+                    </div>
+                    <div class="control-item">
+                        <label>水泵清洗强度</label>
+                        <span id="pump-intensity-display">1级</span>
+                    </div>
+                    <div class="control-item">
+                        <label>清洗筛管</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sieve-clean-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-item">
+                        <label>清洗固定阀门</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="valve-clean-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div class="control-item">
-                    <label>浑浊度下限</label>
-                    <input type="number" class="threshold-input" id="lower-threshold" value="50">
-                </div>
-                <div class="control-item">
-                    <label>水泵清洗强度</label>
-                    <span id="pump-intensity-display">1级</span>
-                </div>
-                <div class="control-item">
-                    <label>清洗筛管</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="sieve-clean-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="control-item">
-                    <label>清洗固定阀门</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="valve-clean-toggle">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- 3. 状态信息 -->
-        <section class="card">
-            <h2 class="section-title">状态信息</h2>
-            <div class="status-group">
-                <div class="status-item">
-                    <label>筛管状态</label>
-                    <span id="sieve-status" class="status-value status-normal">正常</span>
+            <!-- 3. 状态信息 -->
+            <section class="card">
+                <h2 class="section-title">状态信息</h2>
+                <div class="status-group">
+                    <div class="status-item">
+                        <label>筛管状态</label>
+                        <span id="sieve-status" class="status-value status-normal">正常</span>
+                    </div>
+                    <div class="status-item">
+                        <label>固定阀状态</label>
+                        <span id="valve-status" class="status-value status-normal">正常</span>
+                    </div>
                 </div>
-                <div class="status-item">
-                    <label>固定阀状态</label>
-                    <span id="valve-status" class="status-value status-normal">正常</span>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
 
     <script>
