@@ -3,488 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多功能PDF工具箱</title>
-    <!-- 引入Tailwind CSS框架 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入jsPDF库 (用于图片转PDF) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- 引入pdf-lib库 (用于PDF合并) -->
-    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <title>智慧监测系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* --- 通用样式 --- */
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+        :root {
+            --bg-url: url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            --card-bg-color: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.2);
+            --text-color: #f0f0f0;
+            --text-secondary-color: #b0b0b0;
+            --success-color: #00ffab;
+            --alarm-color: #ff4d4d;
+            --font-family: 'Poppins', sans-serif;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* 导航栏激活状态样式 */
-        .tab-active {
-            border-color: #3b82f6; /* blue-500 */
-            color: #3b82f6;
-            background-color: #eff6ff; /* blue-50 */
-        }
-
-        /* --- 图片转PDF工具特定样式 --- */
-        #tool-image-to-pdf .preview-item {
-            position: relative;
-            cursor: move;
-            transition: transform 0.2s ease-in-out;
-        }
-        #tool-image-to-pdf .preview-item .remove-btn {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 24px;
-            height: 24px;
-            background-color: rgba(239, 68, 68, 0.9);
-            color: white;
-            border-radius: 50%;
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-url) no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-color);
+            margin: 0;
+            padding: 1rem;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-weight: bold;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: clamp(1rem, 5vw, 1.5rem); /* 自适应内边距 */
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(0.8rem, 3vw, 1rem); /* 自适应卡片间距 */
+        }
+        .section-title {
+            font-size: clamp(1rem, 4vw, 1.1rem); /* 自适应字体 */
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .card {
+            background: var(--card-bg-color);
+            border-radius: 16px;
+            padding: clamp(0.8rem, 4vw, 1rem); /* 自适应卡片内边距 */
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        /* 实时监测部分 */
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+        .data-item { text-align: center; }
+        .data-item .value { font-size: clamp(1.4rem, 5.5vw, 1.6rem); font-weight: 600; } /* 自适应字体 */
+        .data-item .label { font-size: clamp(0.7rem, 2.5vw, 0.75rem); color: var(--text-secondary-color); } /* 自适应字体 */
+
+        /* 设备控制部分 */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .control-item label { font-size: clamp(0.85rem, 3.5vw, 0.9rem); } /* 自适应字体 */
+        
+        .threshold-input {
+            width: 70px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 8px;
+            padding: 0.4rem;
+            text-align: center;
+            font-size: 0.9rem;
+            -moz-appearance: textfield;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        #pump-intensity-display {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
             cursor: pointer;
-            opacity: 1;
-            transition: opacity 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        #tool-image-to-pdf .dragging {
-            opacity: 0.5;
-            transform: scale(1.05);
+        .toggle-switch {
+            position: relative; display: inline-block;
+            width: 44px; height: 24px;
+            flex-shrink: 0; /* 防止开关被压缩 */
         }
-        #tool-image-to-pdf .drag-over {
-            border-color: #3b82f6;
-            transform: scale(1.02);
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.3);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--success-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* 状态信息部分 */
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.3rem 0;
+        }
+        .status-value {
+            font-size: clamp(0.9rem, 4vw, 1rem); /* 自适应字体 */
+            font-weight: 600;
+            padding: 0.3rem 0.8rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .status-normal {
+            color: var(--success-color);
+            background-color: rgba(0, 255, 171, 0.1);
+        }
+        .status-alarm {
+            color: var(--alarm-color);
+            background-color: rgba(255, 77, 77, 0.2);
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0.6; }
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6 md:p-8">
-        
-        <!-- === 导航栏 === -->
-        <div class="mb-6 border-b border-gray-200">
-            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-                <button id="tab-image-to-pdf" class="tab-btn tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg">
-                    图片转PDF
-                </button>
-                <button id="tab-pdf-merge" class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg">
-                    PDF合并
-                </button>
-            </nav>
-        </div>
-
-        <!-- === 工具容器 === -->
-        <div id="tools-container">
-
-            <!-- === 工具1: 图片转PDF (默认显示) === -->
-            <div id="tool-image-to-pdf">
-                <div class="text-center mb-6">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800">多图片合并转PDF</h1>
-                    <p class="text-gray-500 mt-2">免费、快速、安全 - 所有转换均在您的浏览器本地完成</p>
+    <div class="container">
+        <!-- 1. 实时监测 -->
+        <section class="card">
+            <h2 class="section-title">实时监测</h2>
+            <div class="monitoring-grid">
+                <div class="data-item">
+                    <div class="value" id="temp-val">--°C</div>
+                    <div class="label">温度</div>
                 </div>
-                <div id="drop-zone-img" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer transition-all duration-300 hover:border-blue-500 hover:bg-blue-50">
-                    <input type="file" id="file-input-img" multiple accept="image/*" class="hidden">
-                    <div class="flex flex-col items-center">
-                        <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                        <p class="mt-4 text-lg text-gray-600">将图片拖拽到此处，或<span class="font-semibold text-blue-600">点击选择文件</span></p>
-                        <p class="text-sm text-gray-500 mt-1">支持 JPG, PNG, WEBP, GIF 等格式</p>
-                    </div>
+                <div class="data-item">
+                    <div class="value" id="pressure-val">--kPa</div>
+                    <div class="label">压力</div>
                 </div>
-                <div class="mt-6 min-h-[120px]">
-                    <div id="preview-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4"></div>
-                    <p id="placeholder-text-img" class="text-center text-gray-500 py-10">请先添加图片文件...</p>
+                <div class="data-item">
+                    <div class="value" id="sieve-turb-val">--</div>
+                    <div class="label">筛管浑浊度</div>
                 </div>
-                <div id="action-area-img" class="mt-6 hidden">
-                    <p class="text-sm text-gray-600 mb-4 text-center">提示：图片已按文件名自动排序，您仍可拖动调整</p>
-                    <div class="flex flex-col md:flex-row justify-center items-center gap-4">
-                        <button id="convert-btn-img" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-12 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                            <span id="btn-text-img">合并生成PDF</span>
-                            <div id="loader-img" class="loader w-6 h-6 border-t-white border-4 hidden mx-auto"></div>
-                        </button>
-                        <button id="clear-btn-img" class="w-full md:w-auto bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-red-600 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
-                            一键清空
-                        </button>
-                    </div>
+                <div class="data-item">
+                    <div class="value" id="valve-turb-val">--</div>
+                    <div class="label">固定阀浑浊度</div>
                 </div>
             </div>
+        </section>
 
-            <!-- === 工具2: PDF合并 (默认隐藏) === -->
-            <div id="tool-pdf-merge" class="hidden">
-                 <div class="text-center mb-6">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800">多发票合并到单页</h1>
-                    <p class="text-gray-500 mt-2">将多个PDF文件（如发票）合并到一张A4纸上以便打印</p>
+        <!-- 2. 设备控制 -->
+        <section class="card">
+            <h2 class="section-title">设备控制</h2>
+            <div class="control-group">
+                <div class="control-item">
+                    <label>浑浊度上限</label>
+                    <input type="number" class="threshold-input" id="upper-threshold" value="150">
                 </div>
-                <div>
-                     <label for="pdfFiles" class="block text-sm font-medium text-gray-700 mb-2">请选择需要合并的PDF发票文件：</label>
-                     <input type="file" id="pdfFiles" multiple accept="application/pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <div class="control-item">
+                    <label>浑浊度下限</label>
+                    <input type="number" class="threshold-input" id="lower-threshold" value="50">
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6 border-t border-b py-6">
-                    <div>
-                        <label for="orientation" class="block text-sm font-medium text-gray-700">纸张方向:</label>
-                        <select id="orientation" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                            <option value="portrait">纵向</option>
-                            <option value="landscape">横向</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="invoicesPerRow" class="block text-sm font-medium text-gray-700">每行发票数量:</label>
-                        <input type="number" id="invoicesPerRow" value="2" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="invoicesPerCol" class="block text-sm font-medium text-gray-700">每列发票数量:</label>
-                        <input type="number" id="invoicesPerCol" value="2" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    </div>
+                <div class="control-item">
+                    <label>水泵清洗强度</label>
+                    <span id="pump-intensity-display">1级</span>
                 </div>
-                <div class="flex flex-col md:flex-row justify-center items-center gap-4">
-                    <button id="mergeBtn" class="w-full md:w-auto bg-blue-600 text-white font-bold py-3 px-12 rounded-lg shadow-md hover:bg-blue-700 transition-transform transform hover:scale-105 disabled:bg-gray-400">开始合并</button>
-                    <button id="clearBtnPdf" class="w-full md:w-auto bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-red-600 transition-transform transform hover:scale-105">清除文件</button>
-                    <button id="downloadBtn" class="w-full md:w-auto bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-green-600 transition-transform transform hover:scale-105 hidden">下载PDF</button>
+                <div class="control-item">
+                    <label>清洗筛管</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sieve-clean-toggle">
+                        <span class="slider"></span>
+                    </label>
                 </div>
-                <div id="status" class="mt-4 text-center font-semibold text-gray-600"></div>
-                <iframe id="pdfPreview" class="w-full h-[600px] mt-6 border border-gray-300 rounded-lg hidden"></iframe>
+                <div class="control-item">
+                    <label>清洗固定阀门</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="valve-clean-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
+        </section>
 
-        </div>
-    </div>
-    
-    <!-- === 消息提示框 (通用) === -->
-    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-lg p-6 shadow-xl text-center max-w-sm w-full">
-            <p id="modal-text" class="text-lg text-gray-700"></p>
-            <button id="modal-close" class="mt-4 bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">好的</button>
-        </div>
+        <!-- 3. 状态信息 -->
+        <section class="card">
+            <h2 class="section-title">状态信息</h2>
+            <div class="status-group">
+                <div class="status-item">
+                    <label>筛管状态</label>
+                    <span id="sieve-status" class="status-value status-normal">正常</span>
+                </div>
+                <div class="status-item">
+                    <label>固定阀状态</label>
+                    <span id="valve-status" class="status-value status-normal">正常</span>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script>
-        // === 全局变量和初始化 ===
-        const { jsPDF } = window.jspdf;
-        const { PDFDocument } = window.PDFLib;
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM 元素获取 ---
+            const elements = {
+                temp: document.getElementById('temp-val'),
+                pressure: document.getElementById('pressure-val'),
+                sieveTurb: document.getElementById('sieve-turb-val'),
+                valveTurb: document.getElementById('valve-turb-val'),
+                upperThreshold: document.getElementById('upper-threshold'),
+                lowerThreshold: document.getElementById('lower-threshold'),
+                pumpIntensity: document.getElementById('pump-intensity-display'),
+                sieveCleanToggle: document.getElementById('sieve-clean-toggle'),
+                valveCleanToggle: document.getElementById('valve-clean-toggle'),
+                sieveStatus: document.getElementById('sieve-status'),
+                valveStatus: document.getElementById('valve-status'),
+            };
 
-        // --- 获取通用DOM元素 ---
-        const modal = document.getElementById('modal');
-        const modalText = document.getElementById('modal-text');
-        const modalClose = document.getElementById('modal-close');
-        
-        // --- 获取导航和工具容器 ---
-        const tabImageToPdf = document.getElementById('tab-image-to-pdf');
-        const tabPdfMerge = document.getElementById('tab-pdf-merge');
-        const toolImageToPdf = document.getElementById('tool-image-to-pdf');
-        const toolPdfMerge = document.getElementById('tool-pdf-merge');
+            // --- 默认设置和状态 ---
+            const defaultSettings = {
+                upperThreshold: 150,
+                lowerThreshold: 50,
+                pumpIntensity: 1,
+                sieveCleanOn: false,
+                valveCleanOn: false,
+            };
+            let settings = {};
+            let currentData = {
+                sieveTurb: 0,
+                valveTurb: 0,
+            };
 
-        // --- 通用函数 ---
-        function showModal(message) {
-            modalText.textContent = message;
-            modal.classList.remove('hidden');
-        }
-        modalClose.addEventListener('click', () => modal.classList.add('hidden'));
+            // --- 功能函数 ---
+            function loadSettings() {
+                const saved = localStorage.getItem('monitoringSystemSettings');
+                settings = saved ? JSON.parse(saved) : { ...defaultSettings };
+                updateUIFromSettings();
+            }
 
-        // --- 导航切换逻辑 ---
-        function switchTab(activeTab) {
-            const tabs = [tabImageToPdf, tabPdfMerge];
-            const tools = [toolImageToPdf, toolPdfMerge];
-            
-            tabs.forEach(tab => {
-                tab.classList.remove('tab-active', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-                if (tab === activeTab) {
-                    tab.classList.add('tab-active');
+            function saveSettings() {
+                localStorage.setItem('monitoringSystemSettings', JSON.stringify(settings));
+            }
+
+            function updateUIFromSettings() {
+                elements.upperThreshold.value = settings.upperThreshold;
+                elements.lowerThreshold.value = settings.lowerThreshold;
+                elements.pumpIntensity.textContent = `${settings.pumpIntensity}级`;
+                elements.sieveCleanToggle.checked = settings.sieveCleanOn;
+                elements.valveCleanToggle.checked = settings.valveCleanOn;
+            }
+
+            function simulateDataUpdate() {
+                elements.temp.textContent = `${(25 + Math.random() * 5).toFixed(1)}°C`;
+                elements.pressure.textContent = `${(101 + Math.random() * 2 - 1).toFixed(1)}kPa`;
+                
+                currentData.sieveTurb = Math.random() > 0.1 ? (40 + Math.random() * 100) : (150 + Math.random() * 20);
+                currentData.valveTurb = Math.random() > 0.1 ? (40 + Math.random() * 100) : (150 + Math.random() * 20);
+
+                elements.sieveTurb.textContent = currentData.sieveTurb.toFixed(0);
+                elements.valveTurb.textContent = currentData.valveTurb.toFixed(0);
+
+                updateStatus();
+            }
+
+            function updateStatus() {
+                if (currentData.sieveTurb > settings.upperThreshold) {
+                    elements.sieveStatus.textContent = '报警';
+                    elements.sieveStatus.classList.remove('status-normal');
+                    elements.sieveStatus.classList.add('status-alarm');
                 } else {
-                    tab.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    elements.sieveStatus.textContent = '正常';
+                    elements.sieveStatus.classList.remove('status-alarm');
+                    elements.sieveStatus.classList.add('status-normal');
                 }
-            });
 
-            tools.forEach(tool => {
-                // 根据激活的tab的ID来决定显示哪个工具
-                const toolName = activeTab.id.replace('tab-', 'tool-');
-                if (tool.id === toolName) {
-                    tool.classList.remove('hidden');
+                if (currentData.valveTurb > settings.upperThreshold) {
+                    elements.valveStatus.textContent = '报警';
+                    elements.valveStatus.classList.remove('status-normal');
+                    elements.valveStatus.classList.add('status-alarm');
                 } else {
-                    tool.classList.add('hidden');
-                }
-            });
-        }
-        tabImageToPdf.addEventListener('click', () => switchTab(tabImageToPdf));
-        tabPdfMerge.addEventListener('click', () => switchTab(tabPdfMerge));
-
-        
-        // =============================================================================
-        // === 工具1: 图片转PDF 的逻辑 (使用块作用域隔离变量) ===
-        // =============================================================================
-        {
-            const dropZone = document.getElementById('drop-zone-img');
-            const fileInput = document.getElementById('file-input-img');
-            const previewGrid = document.getElementById('preview-grid');
-            const placeholderText = document.getElementById('placeholder-text-img');
-            const actionArea = document.getElementById('action-area-img');
-            const convertBtn = document.getElementById('convert-btn-img');
-            const btnText = document.getElementById('btn-text-img');
-            const loader = document.getElementById('loader-img');
-            const clearBtn = document.getElementById('clear-btn-img');
-
-            let imageFiles = [];
-            let dragSrcElement = null;
-
-            dropZone.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
-            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500', 'bg-blue-50'); });
-            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-blue-500', 'bg-blue-50'));
-            dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('border-blue-500', 'bg-blue-50'); handleFiles(e.dataTransfer.files); });
-            convertBtn.addEventListener('click', createPdf);
-            clearBtn.addEventListener('click', clearAllImages);
-
-            function clearAllImages() {
-                imageFiles = [];
-                renderPreview();
-            }
-
-            function handleFiles(files) {
-                const newFiles = [...files].filter(file => file.type.startsWith('image/'));
-                if (newFiles.length === 0) {
-                    showModal('请选择图片文件！');
-                    return;
-                }
-                imageFiles.push(...newFiles);
-                imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-                renderPreview();
-            }
-
-            function renderPreview() {
-                previewGrid.innerHTML = '';
-                placeholderText.classList.toggle('hidden', imageFiles.length > 0);
-                actionArea.classList.toggle('hidden', imageFiles.length === 0);
-
-                imageFiles.forEach((file, index) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const previewItem = document.createElement('div');
-                        previewItem.className = 'preview-item w-full h-28 bg-gray-100 rounded-md overflow-hidden border-2 border-transparent';
-                        previewItem.setAttribute('draggable', true);
-                        previewItem.dataset.index = index;
-                        previewItem.innerHTML = `
-                            <img src="${e.target.result}" class="w-full h-full object-cover">
-                            <div class="remove-btn">&times;</div>
-                        `;
-                        previewGrid.appendChild(previewItem);
-                        previewItem.querySelector('.remove-btn').addEventListener('click', (event) => {
-                            event.stopPropagation();
-                            removeImage(index);
-                        });
-                        addDragEvents(previewItem);
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            function removeImage(index) {
-                imageFiles.splice(index, 1);
-                renderPreview();
-            }
-
-            function addDragEvents(item) {
-                item.addEventListener('dragstart', (e) => {
-                    dragSrcElement = item;
-                    e.dataTransfer.effectAllowed = 'move';
-                    item.classList.add('dragging');
-                });
-                item.addEventListener('dragenter', () => item.classList.add('drag-over'));
-                item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
-                item.addEventListener('dragover', (e) => { e.preventDefault(); return false; });
-                item.addEventListener('drop', (e) => {
-                    e.stopPropagation();
-                    if (dragSrcElement !== item) {
-                        const srcIndex = parseInt(dragSrcElement.dataset.index);
-                        const targetIndex = parseInt(item.dataset.index);
-                        const [removed] = imageFiles.splice(srcIndex, 1);
-                        imageFiles.splice(targetIndex, 0, removed);
-                        renderPreview();
-                    }
-                    item.classList.remove('drag-over');
-                    return false;
-                });
-                item.addEventListener('dragend', () => {
-                    item.classList.remove('dragging');
-                    Array.from(previewGrid.children).forEach(child => child.classList.remove('drag-over'));
-                });
-            }
-
-            async function createPdf() {
-                if (imageFiles.length === 0) {
-                    showModal('请先添加图片！');
-                    return;
-                }
-                convertBtn.disabled = true;
-                btnText.classList.add('hidden');
-                loader.classList.remove('hidden');
-                try {
-                    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-                    const a4Width = 210, a4Height = 297, margin = 10;
-                    const maxWidth = a4Width - margin * 2, maxHeight = a4Height - margin * 2;
-
-                    for (let i = 0; i < imageFiles.length; i++) {
-                        const imgData = await new Promise(resolve => {
-                            const reader = new FileReader();
-                            reader.onload = e => resolve(e.target.result);
-                            reader.readAsDataURL(imageFiles[i]);
-                        });
-                        const img = await new Promise(resolve => {
-                           const image = new Image();
-                           image.onload = () => resolve(image);
-                           image.src = imgData;
-                        });
-                        
-                        let pdfImgWidth = img.width, pdfImgHeight = img.height;
-                        const ratio = img.width / img.height;
-                        if (pdfImgWidth > maxWidth) { pdfImgWidth = maxWidth; pdfImgHeight = pdfImgWidth / ratio; }
-                        if (pdfImgHeight > maxHeight) { pdfImgHeight = maxHeight; pdfImgWidth = pdfImgHeight * ratio; }
-                        const x = (a4Width - pdfImgWidth) / 2, y = (a4Height - pdfImgHeight) / 2;
-                        if (i > 0) doc.addPage();
-                        doc.addImage(imgData, 'JPEG', x, y, pdfImgWidth, pdfImgHeight);
-                    }
-                    doc.save('合并的图片.pdf');
-                } catch (error) {
-                    console.error('PDF生成失败:', error);
-                    showModal('生成PDF时发生错误，请检查控制台。');
-                } finally {
-                    convertBtn.disabled = false;
-                    btnText.classList.remove('hidden');
-                    loader.classList.add('hidden');
+                    elements.valveStatus.textContent = '正常';
+                    elements.valveStatus.classList.remove('status-alarm');
+                    elements.valveStatus.classList.add('status-normal');
                 }
             }
-        }
 
-        // =============================================================================
-        // === 工具2: PDF合并 的逻辑 (使用块作用域隔离变量) ===
-        // =============================================================================
-        {
-            const pdfFilesInput = document.getElementById('pdfFiles');
-            const mergeBtn = document.getElementById('mergeBtn');
-            const clearBtnPdf = document.getElementById('clearBtnPdf');
-            const downloadBtn = document.getElementById('downloadBtn');
-            const statusDiv = document.getElementById('status');
-            const pdfPreview = document.getElementById('pdfPreview');
-
-            let mergedPdfUrl = null;
-
-            mergeBtn.addEventListener('click', handleMerge);
-            clearBtnPdf.addEventListener('click', clearPdfFiles);
-            downloadBtn.addEventListener('click', () => {
-                if (mergedPdfUrl) {
-                    const a = document.createElement('a');
-                    a.href = mergedPdfUrl;
-                    a.download = '合并的发票.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }
-            });
-            
-            pdfFilesInput.addEventListener('change', () => {
-                if(pdfFilesInput.files.length > 0) {
-                    mergeBtn.disabled = false;
-                } else {
-                    mergeBtn.disabled = true;
-                }
+            // --- 事件监听器 ---
+            elements.upperThreshold.addEventListener('input', (e) => {
+                settings.upperThreshold = parseInt(e.target.value) || 0;
+                saveSettings();
+                updateStatus();
             });
 
-            function clearPdfFiles() {
-                pdfFilesInput.value = ''; // 清空文件选择框
-                statusDiv.textContent = '';
-                pdfPreview.classList.add('hidden');
-                downloadBtn.classList.add('hidden');
-                mergeBtn.disabled = true;
-                if (mergedPdfUrl) {
-                    URL.revokeObjectURL(mergedPdfUrl); // 释放旧的URL占用的内存
-                    mergedPdfUrl = null;
-                }
-            }
+            elements.lowerThreshold.addEventListener('input', (e) => {
+                settings.lowerThreshold = parseInt(e.target.value) || 0;
+                saveSettings();
+            });
 
-            async function handleMerge() {
-                const files = pdfFilesInput.files;
-                if (files.length === 0) {
-                    showModal('请先选择PDF文件！');
-                    return;
-                }
+            elements.pumpIntensity.addEventListener('click', () => {
+                settings.pumpIntensity = (settings.pumpIntensity % 3) + 1;
+                updateUIFromSettings();
+                saveSettings();
+            });
 
-                statusDiv.textContent = '正在合并，请稍候...';
-                mergeBtn.disabled = true;
-                downloadBtn.classList.add('hidden');
-                pdfPreview.classList.add('hidden');
+            elements.sieveCleanToggle.addEventListener('change', (e) => {
+                settings.sieveCleanOn = e.target.checked;
+                saveSettings();
+            });
 
-                try {
-                    const orientation = document.getElementById('orientation').value;
-                    const invoicesPerRow = parseInt(document.getElementById('invoicesPerRow').value) || 2;
-                    const invoicesPerCol = parseInt(document.getElementById('invoicesPerCol').value) || 2;
-                    
-                    const a4Size = orientation === 'portrait' ? [595.28, 841.89] : [841.89, 595.28]; // A4 in points
-                    const [pageWidth, pageHeight] = a4Size;
+            elements.valveCleanToggle.addEventListener('change', (e) => {
+                settings.valveCleanOn = e.target.checked;
+                saveSettings();
+            });
 
-                    const mergedPdf = await PDFDocument.create();
-                    let currentPage = null;
-                    let invoiceCountOnPage = 0;
-                    const invoicesPerPage = invoicesPerRow * invoicesPerCol;
-
-                    const cellWidth = pageWidth / invoicesPerRow;
-                    const cellHeight = pageHeight / invoicesPerCol;
-
-                    for (let i = 0; i < files.length; i++) {
-                        if (invoiceCountOnPage % invoicesPerPage === 0) {
-                            currentPage = mergedPdf.addPage(a4Size);
-                            invoiceCountOnPage = 0;
-                        }
-
-                        const pdfBytes = await files[i].arrayBuffer();
-                        const invoicePdf = await PDFDocument.load(pdfBytes);
-                        const [invoicePage] = await mergedPdf.embedPdf(invoicePdf);
-
-                        const scale = Math.min(cellWidth / invoicePage.width, cellHeight / invoicePage.height) * 0.95; // 0.95 for padding
-                        const scaledWidth = invoicePage.width * scale;
-                        const scaledHeight = invoicePage.height * scale;
-
-                        const col = invoiceCountOnPage % invoicesPerRow;
-                        const row = Math.floor(invoiceCountOnPage / invoicesPerRow);
-
-                        const x = col * cellWidth + (cellWidth - scaledWidth) / 2;
-                        const y = pageHeight - (row + 1) * cellHeight + (cellHeight - scaledHeight) / 2;
-
-                        currentPage.drawPage(invoicePage, {
-                            x,
-                            y,
-                            width: scaledWidth,
-                            height: scaledHeight,
-                        });
-                        
-                        invoiceCountOnPage++;
-                    }
-
-                    const mergedPdfBytes = await mergedPdf.save();
-                    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-
-                    if (mergedPdfUrl) {
-                        URL.revokeObjectURL(mergedPdfUrl);
-                    }
-                    mergedPdfUrl = URL.createObjectURL(blob);
-
-                    pdfPreview.src = mergedPdfUrl;
-                    pdfPreview.classList.remove('hidden');
-                    downloadBtn.classList.remove('hidden');
-                    statusDiv.textContent = `合并成功！共 ${files.length} 个文件被合并。`;
-
-                } catch (error) {
-                    console.error('PDF合并失败:', error);
-                    statusDiv.textContent = '合并失败，请检查文件或控制台信息。';
-                    showModal('合并PDF时发生错误，可能是文件已损坏。');
-                } finally {
-                    mergeBtn.disabled = false;
-                }
-            }
-        }
+            // --- 初始化 ---
+            loadSettings();
+            simulateDataUpdate();
+            setInterval(simulateDataUpdate, 3000);
+        });
     </script>
 </body>
 </html>
