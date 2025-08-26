@@ -20,8 +20,6 @@
         }
         body {
             font-family: var(--font-family);
-            background: var(--bg-url) no-repeat center center fixed;
-            background-size: cover;
             color: var(--text-color);
             margin: 0;
             padding: 1rem;
@@ -30,6 +28,18 @@
             align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
+        }
+        /* 新增：使用伪元素创建固定的背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-url) no-repeat center center;
+            background-size: cover;
+            z-index: -1; /* 将背景置于最底层 */
         }
         .container {
             width: 100%;
